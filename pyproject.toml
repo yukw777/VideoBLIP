@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "fbev"
+version = "0.1.0"
+description = "Finetune BLIP2 on Egocentric Videos"
+authors = ["Peter Yu <2057325+yukw777@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^2.0.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.2.2"
+flake8 = "^6.0.0"
+mypy = "^1.2.0"
+black = "^23.3.0"
+ipython = "^8.12.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
