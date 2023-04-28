@@ -101,7 +101,7 @@ class Ego4dFHOClipDataset(Dataset):
 
         self._video_path_handler = VideoPathHandler()
 
-        self._transform = transform
+        self.transform = transform
 
     def _batch_preprocess_texts(self, batch_examples) -> dict[str, list[int]]:
         """Preprocess text inputs. If using a decoder only language model, we
@@ -187,8 +187,8 @@ class Ego4dFHOClipDataset(Dataset):
             }
 
         # apply transform
-        if self._transform is not None:
-            item = self._transform(item)
+        if self.transform is not None:
+            item = self.transform(item)
 
         # put the frames through the processor
         item["pixel_values"] = self.processor.image_processor(
