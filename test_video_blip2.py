@@ -54,7 +54,7 @@ def test_video_blip2_vision_model_forward(
     # divide the image into non-overlapping patches, flatten them out,
     # then add a cls token.
     num_tokens = (config.image_size // config.patch_size) ** 2 + 1
-    assert last_hidden_state.size() == (batch, time, num_tokens, config.hidden_size)
+    assert last_hidden_state.size() == (batch, time * num_tokens, config.hidden_size)
     assert pooler_output.size() == (batch, time, config.hidden_size)
 
     if output_attentions:
@@ -74,6 +74,6 @@ def test_video_blip2_vision_model_forward(
         # num_hidden_layers + 1 for embeddings
         assert len(hidden_states) == config.num_hidden_layers + 1
         for hidden in hidden_states:
-            assert hidden.size() == (batch, time, num_tokens, config.hidden_size)
+            assert hidden.size() == (batch, time * num_tokens, config.hidden_size)
     else:
         assert hidden_states is None

@@ -1,5 +1,13 @@
 import torch
-from transformers import Blip2VisionModel
+import torch.nn as nn
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForSeq2SeqLM,
+    Blip2Config,
+    Blip2ForConditionalGeneration,
+    Blip2QFormerModel,
+    Blip2VisionModel,
+)
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
@@ -19,11 +27,11 @@ class VideoBlip2VisionModel(Blip2VisionModel):
         :param pixel_values: a tensor of shape (batch, channel, time, height, width)
 
         :returns:
-            last_hidden_state: a tensor of shape (batch, time, seq_len, hidden_size)
+            last_hidden_state: a tensor of shape (batch, time * seq_len, hidden_size)
             pooler_output: a tensor of shape (batch, time, hidden_size)
             hidden_states:
-                a tuple of tensors of shape (batch, time, seq_len, hidden_size), one for
-                the output of the embeddings + one for each layer
+                a tuple of tensors of shape (batch, time * seq_len, hidden_size),
+                one for the output of the embeddings + one for each layer
             attentions:
                 a tuple of tensors of shape (batch, time, num_heads, seq_len, seq_len),
                 one for each layer
@@ -49,7 +57,7 @@ class VideoBlip2VisionModel(Blip2VisionModel):
         # (batch * time, seq_len, hidden_size)
         seq_len = vision_outputs.last_hidden_state.size(1)
         last_hidden_state = vision_outputs.last_hidden_state.view(
-            batch, time, seq_len, -1
+            batch, time * seq_len, -1
         )
         # vision_outputs.pooler_output is of shape
         # (batch * time, hidden_size)
@@ -58,7 +66,7 @@ class VideoBlip2VisionModel(Blip2VisionModel):
         # (batch * time, seq_len, hidden_size)
         hidden_states = (
             tuple(
-                hidden.view(batch, time, seq_len, -1)
+                hidden.view(batch, time * seq_len, -1)
                 for hidden in vision_outputs.hidden_states
             )
             if vision_outputs.hidden_states is not None
@@ -82,3 +90,30 @@ class VideoBlip2VisionModel(Blip2VisionModel):
                 attentions=attentions,
             )
         return (last_hidden_state, pooler_output, hidden_states, attentions)
+
+
+class VideoBlip2ForConditionalGeneration(Blip2ForConditionalGeneration):
+    def __init__(self, config: Blip2Config) -> None:
+        # HACK: we call the grandparent super().__init__() to bypass
+        # Blip2ForConditionalGeneration.__init__() so we can replace
+        # self.vision_model
+        super(Blip2ForConditionalGeneration, self).__init__(config)
+
+        self.vision_model = VideoBlip2VisionModel(config.vision_config)
+
+        self.query_tokens = nn.Parameter(
+            torch.zeros(1, config.num_query_tokens, config.qformer_config.hidden_size)
+        )
+        self.qformer = Blip2QFormerModel(config.qformer_config)
+
+        self.language_projection = nn.Linear(
+            config.qformer_config.hidden_size, config.text_config.hidden_size
+        )
+        if config.use_decoder_only_language_model:
+            language_model = AutoModelForCausalLM.from_config(config.text_config)
+        else:
+            language_model = AutoModelForSeq2SeqLM.from_config(config.text_config)
+        self.language_model = language_model
+
+        # Initialize weights and apply final processing
+        self.post_init()
