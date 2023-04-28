@@ -8,6 +8,7 @@ from datasets import Dataset
 from pytorchvideo.data.video import VideoPathHandler
 from transformers import Blip2Processor
 
+PROMPT = "Question: What is the camera wearer doing? Answer:"
 INSTR_PROMPT = "What is the camera wearer doing?"
 
 
@@ -24,7 +25,8 @@ class Ego4dFHOClipDataset(Dataset):
         annotation_path: str,
         clip_path: str,
         processor: Blip2Processor,
-        use_decoder_only_language_model: bool,
+        use_decoder_only_language_model: bool = True,
+        instruct_tuned: bool = True,
         transform: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
     ) -> None:
         """
@@ -33,11 +35,14 @@ class Ego4dFHOClipDataset(Dataset):
         :param processor: Blip2Processor
         :param use_decoder_only_language_model:
             whether we're using decoder only language model
+        :param instruct_tuned: whether the language model has been instruction-tuned.
+            affects which prompt is used.
         :param transform: transform function for each data point
         """
         self.clip_path = Path(clip_path)
         self.processor = processor
         self.use_decoder_only_language_model = use_decoder_only_language_model
+        self.prompt = INSTR_PROMPT if instruct_tuned else PROMPT
 
         with open(annotation_path) as f:
             annotations = json.load(f)
@@ -118,7 +123,7 @@ class Ego4dFHOClipDataset(Dataset):
             # tokenize and append eos
             tokenized = self.processor.tokenizer(
                 [
-                    INSTR_PROMPT + " " + self._clean_narration_text(narration_text)
+                    self.prompt + " " + self._clean_narration_text(narration_text)
                     for narration_text in batch_examples["narration_text"]
                 ],
                 return_attention_mask=False,
@@ -130,10 +135,7 @@ class Ego4dFHOClipDataset(Dataset):
             # eos is automatically appended by the tokenizer
             return {
                 "input_ids": self.processor.tokenizer(
-                    [
-                        INSTR_PROMPT
-                        for _ in range(len(batch_examples["narration_text"]))
-                    ],
+                    [self.prompt for _ in range(len(batch_examples["narration_text"]))],
                     return_attention_mask=False,
                 ).input_ids,
                 "labels": self.processor.tokenizer(
