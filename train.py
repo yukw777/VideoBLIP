@@ -123,6 +123,10 @@ def extract_frames(
 
         if video_transform is not None:
             frames = video_transform(frames)
+        # put the frames through the processor
+        frames = image_processor(frames.permute(1, 0, 2, 3), return_tensors="pt")[
+            "pixel_values"
+        ].permute(1, 0, 2, 3)
         frames_list.append(frames)
     del batch_items["clip_uid"]
     del batch_items["clip_start_sec"]
@@ -130,22 +134,6 @@ def extract_frames(
 
     # (batch, channel, time, height, width)
     batch_items["pixel_values"] = torch.stack(frames_list)
-    batch, channel, time, _, _ = batch_items["pixel_values"].size()
-
-    # put the frames through the processor
-    # (batch * time, channel, resized_height, resized_width)
-    batch_items["pixel_values"] = image_processor(
-        batch_items["pixel_values"].permute(0, 2, 1, 3, 4).flatten(end_dim=1),
-        return_tensors="pt",
-    )["pixel_values"]
-
-    # restore the dims
-    # (batch, channel, time, resized_height, resized_width)
-    batch_items["pixel_values"] = (
-        batch_items["pixel_values"]
-        .view(batch, time, channel, batch_items["pixel_values"].size(2), -1)
-        .permute(0, 2, 1, 3, 4)
-    )
 
     return batch_items
 
