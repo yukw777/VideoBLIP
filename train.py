@@ -179,6 +179,9 @@ def train() -> None:
     training_args: TrainingArguments
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+    # Don't remove "unused columns" such as clip-related columns
+    training_args.remove_unused_columns = False
+
     processor = transformers.Blip2Processor.from_pretrained(
         model_args.model_name_or_path
     )
