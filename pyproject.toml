@@ -13,6 +13,7 @@ pytorchvideo = "^0.1.5"
 torchvision = "^0.15.1"
 transformers = "^4.28.1"
 datasets = "^2.11.0"
+accelerate = "^0.18.0"
 
 [tool.poetry.group.dev]
 optional = true

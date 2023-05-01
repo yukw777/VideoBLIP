@@ -1,6 +1,6 @@
 import pytest
 
-from ego4d_dataset import Ego4dFHOClipDataset
+from train import clean_narration_text
 
 
 @pytest.mark.parametrize(
@@ -12,7 +12,5 @@ from ego4d_dataset import Ego4dFHOClipDataset
         ("#C c drops a plate", "The camera wearer drops a plate"),
     ],
 )
-def test_ego4d_fho_clip_dataset_clean_narration_text(
-    narration_text: str, cleaned: str
-) -> None:
-    assert Ego4dFHOClipDataset._clean_narration_text(narration_text) == cleaned
+def test_clean_narration_text(narration_text: str, cleaned: str) -> None:
+    assert clean_narration_text(narration_text) == {"cleaned_narration_text": cleaned}
