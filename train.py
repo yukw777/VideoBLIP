@@ -170,6 +170,28 @@ class TrainingArguments(transformers.TrainingArguments):
     val_set_size: float = field(default=0.1)
 
 
+class DataCollatorForVideoLanguageModeling(
+    transformers.DataCollatorForLanguageModeling
+):
+    def __call__(self, features, return_tensors=None):
+        pixel_values = torch.stack(
+            [feature.pop("pixel_values") for feature in features]
+        )
+        collated = super().__call__(features, return_tensors=return_tensors)
+        collated["pixel_values"] = pixel_values
+        return collated
+
+
+class DataCollatorForVideoSeq2Seq(transformers.DataCollatorForSeq2Seq):
+    def __call__(self, features, return_tensors=None):
+        pixel_values = torch.stack(
+            [feature.pop("pixel_values") for feature in features]
+        )
+        collated = super().__call__(features, return_tensors=return_tensors)
+        collated["pixel_values"] = pixel_values
+        return collated
+
+
 def train() -> None:
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments)
@@ -302,13 +324,13 @@ def train() -> None:
         args=training_args,
         train_dataset=train_data,
         eval_dataset=val_data,
-        data_collator=transformers.DataCollatorForLanguageModeling(
+        data_collator=DataCollatorForVideoLanguageModeling(
             processor.tokenizer,
             mlm=False,
             pad_to_multiple_of=8 if training_args.fp16 or training_args.bf16 else None,
         )
         if model.config.use_decoder_only_language_model
-        else transformers.DataCollatorForSeq2Seq(
+        else DataCollatorForVideoSeq2Seq(
             processor.tokenizer,
             pad_to_multiple_of=8 if training_args.fp16 or training_args.bf16 else None,
         ),
