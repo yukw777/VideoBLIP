@@ -1,6 +1,6 @@
 import pytest
 
-from train import clean_narration_text
+from video_blip2.dataset.utils import clean_narration_text
 
 
 @pytest.mark.parametrize(
