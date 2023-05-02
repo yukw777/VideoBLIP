@@ -14,7 +14,7 @@ from pytorchvideo.transforms import UniformTemporalSubsample
 from torchvision.transforms import Compose
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 
-from video_blip2 import VideoBlip2ForConditionalGeneration
+from video_blip2.model import VideoBlip2ForConditionalGeneration
 
 PROMPT = "Question: What is the camera wearer doing? Answer:"
 INSTR_PROMPT = "What is the camera wearer doing?"

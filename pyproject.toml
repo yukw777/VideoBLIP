@@ -1,10 +1,11 @@
 [tool.poetry]
-name = "fbev"
+name = "video-blip2"
 version = "0.1.0"
-description = "Finetune BLIP2 on Egocentric Videos"
+description = "Video-BLIP2: BLIP2 for Videos"
 authors = ["Peter Yu <2057325+yukw777@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
+packages = [{include = "video_blip2"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

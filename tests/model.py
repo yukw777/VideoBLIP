@@ -1,8 +1,8 @@
 import pytest
 import torch
-from transformers.models.blip_2.configuration_blip_2 import Blip2VisionConfig
+from transformers import Blip2VisionConfig
 
-from video_blip2 import VideoBlip2VisionModel
+from video_blip2.model import VideoBlip2VisionModel
 
 
 @pytest.mark.parametrize("output_hidden_states", [True, False])
