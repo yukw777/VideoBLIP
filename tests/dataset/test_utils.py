@@ -13,4 +13,4 @@ from video_blip2.dataset.utils import clean_narration_text
     ],
 )
 def test_clean_narration_text(narration_text: str, cleaned: str) -> None:
-    assert clean_narration_text(narration_text) == {"cleaned_narration_text": cleaned}
+    assert clean_narration_text(narration_text) == cleaned

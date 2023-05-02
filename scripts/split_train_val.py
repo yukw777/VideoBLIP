@@ -81,6 +81,6 @@ print(f"sampled number of val narrated actions: {curr_num_val_narrated_actions}"
 # write to files
 split_output_path = Path(args.split_output_path)
 with open(split_output_path / "fho_main_train.json", "w") as f:
-    json.dump({"split": "train", "videos": list(train_videos.keys())}, f)
+    json.dump({"split": "train", "videos": train_videos}, f)
 with open(split_output_path / "fho_main_val.json", "w") as f:
-    json.dump({"split": "val", "videos": list(val_videos.keys())}, f)
+    json.dump({"split": "val", "videos": val_videos}, f)

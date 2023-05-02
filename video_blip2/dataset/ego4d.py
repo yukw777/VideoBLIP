@@ -107,6 +107,7 @@ class Ego4dFHOMainDataset(LabeledVideoDataset):
             split_data = json.load(f)
 
         self.split = split_data["split"]
+        self.num_narrated_actions = sum(split_data["videos"].values())
 
         def _transform(item: dict) -> Any:
             """The first transform function that formats `narrated_actions`."""
@@ -144,3 +145,6 @@ class Ego4dFHOMainDataset(LabeledVideoDataset):
             transform=_transform,
             decode_audio=False,
         )
+
+    def __len__(self) -> int:
+        return self.num_narrated_actions
