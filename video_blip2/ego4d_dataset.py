@@ -50,20 +50,28 @@ class RandomNarratedActionClipSampler(ClipSampler):
         if self._current_clip_index == len(self.shuffled_clip_indices):
             is_last_clip = True
 
-        # take a clip of `self._clip_duration` seconds cenetered at the mid-point of
-        # narrated_action
-        mid_point = (
-            Fraction(narrated_action["start_sec"])
-            + Fraction(narrated_action["end_sec"])
-        ) / 2
-        clip_start_sec = mid_point - self._clip_duration / 2
+        # sample a clip 8 seconds around narration_time_sec
+        # if narration_time_sec is less than 4 seconds, we start from 0
+        clip_start_sec = max(
+            Fraction(narrated_action["narration_timestamp_sec"])
+            - self._clip_duration / 2,
+            0,
+        )
+
+        # add 8 seconds to clip_start_sec
+        # if clip_end_sec goes over the video duration, adjust clip_start_sec
+        clip_end_sec = clip_start_sec + self._clip_duration
+        video_duration_sec = Fraction(annotation["video_metadata"]["duration_sec"])
+        if clip_end_sec > video_duration_sec:
+            clip_end_sec = video_duration_sec
+            clip_start_sec = clip_end_sec - self._clip_duration
 
         if is_last_clip:
             self.reset()
 
         return ClipInfo(
             clip_start_sec,
-            clip_start_sec + self._clip_duration,
+            clip_end_sec,
             clip_index,
             0,
             is_last_clip,
