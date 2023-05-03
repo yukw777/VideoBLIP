@@ -92,6 +92,7 @@ class Ego4dFHOMainDataset(LabeledVideoDataset):
         split_path: str,
         video_dir_path: str,
         transform: Callable[[dict], Any] | None = None,
+        random_clip: bool = True,
     ) -> None:
         """
         :param annotation_path: path to the main annotation file, e.g., `fho_main.json`.
@@ -99,6 +100,7 @@ class Ego4dFHOMainDataset(LabeledVideoDataset):
             `scripts/split_train_val.py`.
         :param video_path: path to video dir
         :param transform: optional transform function
+        :param random_clip: whether to sample clips randomly
         """
         with open(annotation_path) as f:
             annotations = json.load(f)
@@ -144,7 +146,7 @@ class Ego4dFHOMainDataset(LabeledVideoDataset):
                 )
                 for video_uid in split_data["videos"]
             ],
-            NarratedActionClipSampler(),
+            NarratedActionClipSampler(random=random_clip),
             transform=_transform,
             decode_audio=False,
         )
