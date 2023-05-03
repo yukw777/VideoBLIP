@@ -16,6 +16,7 @@ transformers = "^4.28.1"
 datasets = "^2.11.0"
 accelerate = "^0.18.0"
 wandb = "^0.15.1"
+imageio = "^2.28.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -34,7 +35,6 @@ optional = true
 [tool.poetry.group.jupyter.dependencies]
 jupyter = "^1.0.0"
 matplotlib = "^3.7.1"
-imageio = "^2.28.0"
 
 [build-system]
 requires = ["poetry-core"]

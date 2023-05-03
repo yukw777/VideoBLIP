@@ -1318,7 +1318,7 @@ files = [
 name = "imageio"
 version = "2.28.0"
 description = "Library for reading and writing a wide range of image, video, scientific, and volumetric data formats."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -4708,4 +4708,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "dbdbb3b1512073196dbec3253c6e5ef46fa1d538a5aa14183c11a032c6f5d44f"
+content-hash = "934a11b79c37961fe6a1d623a1f6e17aea0c08220197ae5078eba4584d7fb45c"

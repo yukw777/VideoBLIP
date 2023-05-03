@@ -1,96 +1,99 @@
 import argparse
 import csv
-import json
 import os
-import re
-import subprocess
-from concurrent.futures import ThreadPoolExecutor
+from collections.abc import Callable
+from functools import partial
+from typing import Any
 
+import imageio.v3 as iio
+import numpy as np
+import torch
+from pytorchvideo.transforms import UniformTemporalSubsample
+from torch.utils.data import DataLoader
+from torchvision.transforms import Compose
 from tqdm import tqdm
+from transformers import Blip2Processor
 
-C_REGEX = re.compile(r"^\#C C", re.IGNORECASE)
+from video_blip2.dataset.ego4d import Ego4dFHOMainDataset
+
 parser = argparse.ArgumentParser()
-parser.add_argument("fho_main_path")
-parser.add_argument("video_dir")
-parser.add_argument("frames_dir")
+parser.add_argument("--fho_main_path", required=True)
+parser.add_argument("--split_path", required=True)
+parser.add_argument("--video_dir", required=True)
+parser.add_argument("--frames_dir", required=True)
+parser.add_argument("--model_name_or_path", required=True)
+parser.add_argument("--num_subsample_frames", type=int, required=True)
+parser.add_argument("--num_workers", type=int, default=0)
+parser.add_argument("--max_num_narrated_actions", type=int, default=0)
 args = parser.parse_args()
 
 
-def seconds_to_hms(seconds: float) -> str:
-    hours, remainder = divmod(seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
-
-
 def process_narrated_action(
-    video_uid: str, input_video: str, narrated_action: dict
-) -> dict | None:
-    if (
-        narrated_action["is_rejected"]
-        or not narrated_action["is_valid_action"]
-        or C_REGEX.match(narrated_action["narration_text"]) is None
-    ):
-        return None
-    narration_text = narrated_action["narration_text"]
-    start_sec = narrated_action["start_sec"]
-    start_hms = seconds_to_hms(start_sec)
-    end_sec = narrated_action["end_sec"]
-    end_hms = seconds_to_hms(end_sec)
-    duration = round(end_sec - start_sec)
-    narrated_action_id = "|".join([video_uid, start_hms, end_hms])
+    pixel_values: torch.Tensor, video_uid: str, clip_index: int
+) -> str:
+    frame_path = video_uid + "|" + str(clip_index)
 
     # Create a dir for the extracted frames
-    frames_dir = os.path.join(args.frames_dir, f"{narrated_action_id}")
+    frames_dir = os.path.join(args.frames_dir, frame_path)
     os.makedirs(frames_dir, exist_ok=True)
 
-    # Extract frames using ffmpeg
-    ffmpeg_command = [
-        "ffmpeg",
-        "-ss",
-        start_hms,
-        "-i",
-        input_video,
-        "-t",
-        str(duration),
-        "-vf",
-        "fps=1,scale=224:224",
-        "-q:v",
-        "1",
-        f"{frames_dir}/{narrated_action_id}_%04d.png",
-    ]
-    subprocess.run(
-        ffmpeg_command,
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-
-    # Create narration_data and return it
-    narration_data = {
-        "narration_action_id": narrated_action_id,
-        "start_sec": start_sec,
-        "end_sec": end_sec,
-        "narration_text": narration_text,
-    }
-    return narration_data
+    for i, frame in enumerate(
+        pixel_values.permute(1, 2, 3, 0).numpy().astype(np.uint8)
+    ):
+        iio.imwrite(
+            os.path.join(frames_dir, frame_path + "|" + str(i) + ".png"),
+            frame,
+            extension=".png",
+        )
+    return frame_path
 
 
-# Load fho_main.json
-with open(args.fho_main_path) as f:
-    data = json.load(f)
+processor = Blip2Processor.from_pretrained(args.model_name_or_path)
+
+
+def transform(
+    processor: Blip2Processor,
+    video_transform: Callable[[torch.Tensor], torch.Tensor],
+    item: dict[str, Any],
+) -> dict[str, torch.Tensor]:
+    pixel_values = item.pop("video")
+    pixel_values = video_transform(pixel_values)
+
+    # run pixel_values through the image processor
+    pixel_values = processor.image_processor(
+        pixel_values.permute(1, 0, 2, 3), return_tensors="pt"
+    )["pixel_values"].permute(1, 0, 2, 3)
+
+    return {"pixel_values": pixel_values, **item}
+
+
+dataset = Ego4dFHOMainDataset(
+    args.fho_main_path,
+    args.split_path,
+    args.video_dir,
+    transform=partial(
+        transform,
+        processor,
+        Compose([UniformTemporalSubsample(args.num_subsample_frames)]),
+    ),
+    random_clip=False,
+)
 
 # Create a directory to save all the results
 os.makedirs(args.frames_dir, exist_ok=True)
 
-# Open narrations.csv file for writing
-with open(os.path.join(args.frames_dir, "narrations.csv"), "w", newline="") as csvfile:
+# Open narrated_actions.csv file for writing
+with open(
+    os.path.join(args.frames_dir, "narrated_actions.csv"), "w", newline=""
+) as csvfile:
     # Initialize CSV writer
     csv_writer = csv.DictWriter(
         csvfile,
         [
-            "narration_action_id",
-            "start_sec",
-            "end_sec",
+            "frame_path",
+            "video_uid",
+            "clip_index",
+            "narration_timestamp_sec",
             "narration_text",
         ],
     )
@@ -98,24 +101,26 @@ with open(os.path.join(args.frames_dir, "narrations.csv"), "w", newline="") as c
     # Write header row
     csv_writer.writeheader()
 
-    # Iterate through videos
-    for video in tqdm(data["videos"]):
-        video_uid = video["video_uid"]
-        input_video = os.path.join(args.video_dir, f"{video_uid}.mp4")
-
-        # Create a ThreadPoolExecutor
-        with ThreadPoolExecutor() as executor:
-            # Use a list comprehension to submit tasks to the executor
-            futures = [
-                executor.submit(
-                    process_narrated_action, video_uid, input_video, narrated_action
-                )
-                for interval in video["annotated_intervals"]
-                for narrated_action in interval["narrated_actions"]
-            ]
-
-            # Wait for all tasks to complete and accumulate narration_data
-            for future in tqdm(futures, desc=f"Processing video {video_uid}"):
-                narration_data = future.result()
-                if narration_data is not None:
-                    csv_writer.writerow(narration_data)
+    num_extracted_narrated_action = 0
+    for item in tqdm(
+        DataLoader(dataset, batch_size=None, num_workers=args.num_workers),
+        desc="Extracting frames",
+    ):
+        frame_path = process_narrated_action(
+            item["pixel_values"], item["video_uid"], item["clip_index"]
+        )
+        csv_writer.writerow(
+            {
+                "frame_path": frame_path,
+                "video_uid": item["video_uid"],
+                "clip_index": item["clip_index"],
+                "narration_timestamp_sec": item["narration_timestamp_sec"],
+                "narration_text": item["narration_text"].strip(),
+            }
+        )
+        num_extracted_narrated_action += 1
+        if (
+            args.max_num_narrated_actions > 0
+            and num_extracted_narrated_action == args.max_num_narrated_actions
+        ):
+            break
