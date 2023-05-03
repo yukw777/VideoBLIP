@@ -15,6 +15,7 @@ torchvision = "^0.15.1"
 transformers = "^4.28.1"
 datasets = "^2.11.0"
 accelerate = "^0.18.0"
+wandb = "^0.15.1"
 
 [tool.poetry.group.dev]
 optional = true
