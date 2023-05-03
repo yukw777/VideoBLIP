@@ -3,11 +3,14 @@ import os
 import random
 import re
 from collections.abc import Callable
+from csv import DictReader
 from fractions import Fraction
 from typing import Any
 
 from pytorchvideo.data import ClipSampler, LabeledVideoDataset
 from pytorchvideo.data.clip_sampling import ClipInfo
+from pytorchvideo.data.video import VideoPathHandler
+from torch.utils.data import Dataset
 
 
 class NarratedActionClipSampler(ClipSampler):
@@ -153,3 +156,43 @@ class Ego4dFHOMainDataset(LabeledVideoDataset):
 
     def __len__(self) -> int:
         return self.num_narrated_actions
+
+
+class Ego4dFHOMainFrameDataset(Dataset[dict[str, Any]]):
+    def __init__(
+        self,
+        narrated_actions_dir: str,
+        transform: Callable[[dict], Any] | None = None,
+    ) -> None:
+        """
+        :param narrated_actions_dir: path to dir that contains narrated_actions.csv
+            and extracted frames
+        """
+        self.narrated_actions_dir = narrated_actions_dir
+        self.data: list[dict] = []
+        with open(
+            os.path.join(self.narrated_actions_dir, "narrated_actions.csv"), newline=""
+        ) as csvfile:
+            csvreader = DictReader(csvfile)
+            for row in csvreader:
+                self.data.append(row)
+
+        self._video_path_handler = VideoPathHandler()
+        self._transform = transform
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        datapoint = self.data[index]
+        video = self._video_path_handler.video_from_path(
+            os.path.join(self.narrated_actions_dir, datapoint["frame_path"])
+        )
+        # just get the whole video since the clip is already extracted
+        clip = video.get_clip(0, video.duration)
+
+        item = {"video": clip["video"], "narration_text": datapoint["narration_text"]}
+
+        if self._transform is not None:
+            item = self._transform(item)
+        return item
+
+    def __len__(self) -> int:
+        return len(self.data)

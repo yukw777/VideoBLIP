@@ -1,16 +1,13 @@
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Any
 
 import torch
 import transformers
-from pytorchvideo.transforms import UniformTemporalSubsample
-from torchvision.transforms import Compose
 from transformers import Blip2Processor
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 
-from video_blip2.dataset.ego4d import Ego4dFHOMainDataset
+from video_blip2.dataset.ego4d import Ego4dFHOMainFrameDataset
 from video_blip2.dataset.utils import clean_narration_text
 from video_blip2.model import VideoBlip2ForConditionalGeneration
 
@@ -21,7 +18,6 @@ INSTR_PROMPT = "What is the camera wearer doing?"
 def preprocess(
     processor: Blip2Processor,
     item: dict[str, Any],
-    video_transform: Callable[[torch.Tensor], torch.Tensor] | None = None,
     decoder_only_lm: bool = True,
     instruct_tuned: bool = True,
 ) -> dict[str, torch.Tensor]:
@@ -44,17 +40,7 @@ def preprocess(
         preprocessed["labels"] = processor.tokenizer(
             cleaned_narration_text, return_attention_mask=False
         ).input_ids
-
-    # transform video inputs
-    pixel_values = item["video"]
-    if video_transform is not None:
-        pixel_values = video_transform(pixel_values)
-
-    # run pixel_values through the image processor
-    pixel_values = processor.image_processor(
-        pixel_values.permute(1, 0, 2, 3), return_tensors="pt"
-    )["pixel_values"].permute(1, 0, 2, 3)
-    preprocessed["pixel_values"] = pixel_values
+    preprocessed["pixel_values"] = item["video"]
 
     return preprocessed
 
@@ -70,10 +56,8 @@ class ModelArguments:
 
 @dataclass
 class DataArguments:
-    annotation_path: str
-    train_split_path: str
-    val_split_path: str
-    video_dir_path: str
+    train_narrated_actions_dir: str
+    val_narrated_actions_dir: str
 
 
 @dataclass
@@ -131,30 +115,20 @@ def train() -> None:
     # frozen.
     model.enable_input_require_grads()
 
-    train_data = Ego4dFHOMainDataset(
-        data_args.annotation_path,
-        data_args.train_split_path,
-        data_args.video_dir_path,
+    train_data = Ego4dFHOMainFrameDataset(
+        data_args.train_narrated_actions_dir,
         transform=partial(
             preprocess,
             processor,
-            video_transform=Compose(
-                [UniformTemporalSubsample(model_args.num_subsample_frames)]
-            ),
             decoder_only_lm=model.config.use_decoder_only_language_model,
             instruct_tuned=model_args.instruct_tuned,
         ),
     )
-    val_data = Ego4dFHOMainDataset(
-        data_args.annotation_path,
-        data_args.val_split_path,
-        data_args.video_dir_path,
+    val_data = Ego4dFHOMainFrameDataset(
+        data_args.val_narrated_actions_dir,
         transform=partial(
             preprocess,
             processor,
-            video_transform=Compose(
-                [UniformTemporalSubsample(model_args.num_subsample_frames)]
-            ),
             decoder_only_lm=model.config.use_decoder_only_language_model,
             instruct_tuned=model_args.instruct_tuned,
         ),
