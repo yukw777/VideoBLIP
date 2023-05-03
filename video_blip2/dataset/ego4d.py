@@ -10,15 +10,18 @@ from pytorchvideo.data import ClipSampler, LabeledVideoDataset
 from pytorchvideo.data.clip_sampling import ClipInfo
 
 
-class RandomNarratedActionClipSampler(ClipSampler):
-    def __init__(self) -> None:
+class NarratedActionClipSampler(ClipSampler):
+    def __init__(self, random: bool = True) -> None:
         """The vast majority of narrated actions are 8 seconds long, and none
         are longer.
 
         So let's just sample 8-second clips.
+
+        :param random: whether to return random clips or not
         """
         super().__init__(8)
-        self.shuffled_clip_indices: list[int] | None = None
+        self.random = random
+        self.sample_clip_indices: list[int] | None = None
 
     def __call__(
         self,
@@ -33,19 +36,19 @@ class RandomNarratedActionClipSampler(ClipSampler):
         :param annotation: narrated action data.
             See https://ego4d-data.org/docs/data/annotations-schemas/ for more details.
         """
-        if self.shuffled_clip_indices is None:
-            # first time sampling from this video, so create a shuffled list
-            self.shuffled_clip_indices = list(
-                range(len(annotation["narrated_actions"]))
-            )
-            random.shuffle(self.shuffled_clip_indices)
+        if self.sample_clip_indices is None:
+            # first time sampling from this video, so create a clip index list
+            self.sample_clip_indices = list(range(len(annotation["narrated_actions"])))
+            if self.random:
+                # shuffle them if random
+                random.shuffle(self.sample_clip_indices)
 
-        clip_index = self.shuffled_clip_indices[self._current_clip_index]
+        clip_index = self.sample_clip_indices[self._current_clip_index]
         narrated_action = annotation["narrated_actions"][clip_index]
         self._current_clip_index += 1
 
         is_last_clip = False
-        if self._current_clip_index == len(self.shuffled_clip_indices):
+        if self._current_clip_index == len(self.sample_clip_indices):
             is_last_clip = True
 
         # sample a clip 8 seconds around narration_time_sec
@@ -77,7 +80,7 @@ class RandomNarratedActionClipSampler(ClipSampler):
 
     def reset(self) -> None:
         self._current_clip_index = 0
-        self.shuffled_clip_indices = None
+        self.sample_clip_indices = None
 
 
 class Ego4dFHOMainDataset(LabeledVideoDataset):
@@ -141,7 +144,7 @@ class Ego4dFHOMainDataset(LabeledVideoDataset):
                 )
                 for video_uid in split_data["videos"]
             ],
-            RandomNarratedActionClipSampler(),
+            NarratedActionClipSampler(),
             transform=_transform,
             decode_audio=False,
         )
