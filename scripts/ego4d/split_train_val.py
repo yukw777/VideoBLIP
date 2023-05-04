@@ -5,7 +5,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from video_blip2.dataset.ego4d import Ego4dFHOMainDataset
+from video_blip2.data.ego4d import Ego4dFHOMainDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("fho_main_path")

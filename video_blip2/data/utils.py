@@ -1,6 +1,6 @@
 import re
 
-from video_blip2.dataset.ego4d import Ego4dFHOMainDataset
+from video_blip2.data.ego4d import Ego4dFHOMainDataset
 
 
 def clean_narration_text(narration_text: str) -> str:

@@ -7,8 +7,8 @@ import transformers
 from transformers import Blip2Processor
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 
-from video_blip2.dataset.ego4d import Ego4dFHOMainFrameDataset
-from video_blip2.dataset.utils import clean_narration_text
+from video_blip2.data.ego4d import Ego4dFHOMainFrameDataset
+from video_blip2.data.utils import clean_narration_text
 from video_blip2.model import VideoBlip2ForConditionalGeneration
 
 PROMPT = "Question: What is the camera wearer doing? Answer:"
