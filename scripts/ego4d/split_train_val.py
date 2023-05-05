@@ -10,6 +10,7 @@ from video_blip2.data.ego4d import Ego4dFHOMainDataset
 parser = argparse.ArgumentParser()
 parser.add_argument("fho_main_path")
 parser.add_argument("split_output_path")
+parser.add_argument("video_dir_path")
 args = parser.parse_args()
 
 # Load fho_main.json
@@ -17,7 +18,13 @@ with open(args.fho_main_path) as f:
     data = json.load(f)
 
 # create a dict video_uid => video
-video_dict = {video["video_uid"]: video for video in data["videos"]}
+video_dir_path = Path(args.video_dir_path)
+video_dict = {
+    video["video_uid"]: video
+    for video in data["videos"]
+    # some videos in fho_main.json actually don't exist, so filter them out
+    if (video_dir_path / (video["video_uid"] + ".mp4")).exists()
+}
 
 print(f"num videos before filtering: {len(video_dict)}")
 # filter narrated actions
