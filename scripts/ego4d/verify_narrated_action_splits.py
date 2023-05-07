@@ -13,6 +13,8 @@ from collections import Counter
 from csv import DictReader, DictWriter
 from pathlib import Path
 
+from tqdm import tqdm
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
@@ -61,12 +63,12 @@ def move_frame_dirs(args: argparse.Namespace, from_split: str, to_split: str) ->
     from_frames_path = getattr(args, f"{from_split}_extracted_frames_path")
     from_narrated_actions_dict = load_narrated_actions_dict(from_frames_path)
 
-    for video_uid, count in split["videos"].items():
+    for video_uid, count in tqdm(split["videos"].items(), desc=f"Fixing {from_split}"):
         to_frame_dirs = glob.glob(to_frames_path + f"/{video_uid}|*")
         if len(to_frame_dirs) != count:
             # we're missing some frame directories from the to split.
             # move them from the from split
-            logging.info(
+            logging.debug(
                 f"Missing {to_split} frame dirs for {video_uid}. "
                 f"Checking {from_split}..."
             )
@@ -76,12 +78,12 @@ def move_frame_dirs(args: argparse.Namespace, from_split: str, to_split: str) ->
                     f"Missing {to_split} frame dirs for {video_uid} not found in "
                     f"{from_split}."
                 )
-            logging.info(
+            logging.debug(
                 f"Missing {to_split} frame dirs for {video_uid} found in {from_split}. "
                 "Moving..."
             )
             for from_frame_dir in from_frame_dirs:
-                logging.info(f"Moving {from_frame_dir} to {to_frames_path}")
+                logging.debug(f"Moving {from_frame_dir} to {to_frames_path}")
                 if args.dry_run:
                     logging.info("Dry run. Not actually moving.")
                     continue
@@ -131,7 +133,9 @@ def verify_frame_dirs(args: argparse.Namespace, split: str) -> None:
         for _, narrated_action in narrated_actions_dict.items()
     )
 
-    for video_uid, count in split_data["videos"].items():
+    for video_uid, count in tqdm(
+        split_data["videos"].items(), desc="Verifying {split}"
+    ):
         if narrated_actions_counter[video_uid] != count:
             logging.warning(
                 f"{split}: Narrated action counts differ between narrated_actions.csv "
