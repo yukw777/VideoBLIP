@@ -26,12 +26,27 @@ def preprocess(
     # tokenize text inputs
     cleaned_narration_text = clean_narration_text(item["narration_text"])
     if decoder_only_lm:
-        # tokenize and append eos
+        # tokenize prompt first
+        prompt_tokens = processor.tokenizer(
+            prompt, return_attention_mask=False
+        ).input_ids
+
+        # tokenize the narration and append eos
         preprocessed = processor.tokenizer(
-            prompt + " " + cleaned_narration_text, return_attention_mask=False
+            " " + cleaned_narration_text,
+            return_attention_mask=False,
+            add_special_tokens=False,
         )
-        preprocessed.input_ids.append(processor.tokenizer.eos_token_id)
+        preprocessed["input_ids"].append(processor.tokenizer.eos_token_id)
+
+        # join tokenized prompt and narration text
+        preprocessed["input_ids"] = prompt_tokens + preprocessed["input_ids"]
         preprocessed["input_ids"] = torch.tensor(preprocessed.input_ids)
+
+        # for decoder only LMs, labels are same as input_ids, but we mask
+        # tokens for the prompt
+        preprocessed["labels"] = preprocessed["input_ids"].clone()
+        preprocessed["labels"][: len(prompt_tokens)] = -100
     else:
         # eos is automatically appended by the tokenizer
         preprocessed = processor.tokenizer(
@@ -63,18 +78,6 @@ class DataArguments:
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
     optim: str = field(default="adamw_torch")
-
-
-class DataCollatorForVideoLanguageModeling(
-    transformers.DataCollatorForLanguageModeling
-):
-    def __call__(self, features, return_tensors=None):
-        pixel_values = torch.stack(
-            [feature.pop("pixel_values") for feature in features]
-        )
-        collated = super().__call__(features, return_tensors=return_tensors)
-        collated["pixel_values"] = pixel_values
-        return collated
 
 
 class DataCollatorForVideoSeq2Seq(transformers.DataCollatorForSeq2Seq):
@@ -142,13 +145,7 @@ def train() -> None:
         args=training_args,
         train_dataset=train_data,
         eval_dataset=val_data,
-        data_collator=DataCollatorForVideoLanguageModeling(
-            processor.tokenizer,
-            mlm=False,
-            pad_to_multiple_of=8 if training_args.fp16 or training_args.bf16 else None,
-        )
-        if model.config.use_decoder_only_language_model
-        else DataCollatorForVideoSeq2Seq(
+        data_collator=DataCollatorForVideoSeq2Seq(
             processor.tokenizer,
             pad_to_multiple_of=8 if training_args.fp16 or training_args.bf16 else None,
         ),
