@@ -66,7 +66,7 @@ def move_frame_dirs(args: argparse.Namespace, from_split: str, to_split: str) ->
     from_frames_path = getattr(args, f"{from_split}_extracted_frames_path")
     from_narrated_actions_dict = load_narrated_actions_dict(from_frames_path)
 
-    for video_uid, count in tqdm(split["videos"].items(), desc=f"Fixing {from_split}"):
+    for video_uid, count in tqdm(split["videos"].items(), desc=f"Fixing {to_split}"):
         to_frame_dirs = glob.glob(to_frames_path + f"/{video_uid}|*")
         if len(to_frame_dirs) != count:
             # we're missing some frame directories from the to split.
@@ -137,7 +137,7 @@ def verify_frame_dirs(args: argparse.Namespace, split: str) -> None:
     )
 
     for video_uid, count in tqdm(
-        split_data["videos"].items(), desc="Verifying {split}"
+        split_data["videos"].items(), desc=f"Verifying {split}"
     ):
         if narrated_actions_counter[video_uid] != count:
             logging.warning(
