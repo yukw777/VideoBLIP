@@ -15,16 +15,19 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
-
 parser = argparse.ArgumentParser()
 parser.add_argument("split_output_path")
 parser.add_argument("train_extracted_frames_path")
 parser.add_argument("val_extracted_frames_path")
 parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument("--verbose", action="store_true", default=False)
 args = parser.parse_args()
+
+
+logging.basicConfig(
+    level=logging.DEBUG if args.verbose else logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 
 
 def load_narrated_actions_dict(frames_path: str) -> dict[str, dict[str, str]]:
