@@ -1,9 +1,12 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Any
 
 import torch
 import transformers
+from pytorchvideo.transforms import UniformTemporalSubsample
+from torchvision.transforms import Compose
 from transformers import Blip2Processor
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 
@@ -20,6 +23,7 @@ def preprocess(
     item: dict[str, Any],
     decoder_only_lm: bool = True,
     instruct_tuned: bool = True,
+    video_transform: Callable[[torch.Tensor], torch.Tensor] | None = None,
 ) -> dict[str, torch.Tensor]:
     prompt = INSTR_PROMPT if instruct_tuned else PROMPT
 
@@ -56,6 +60,8 @@ def preprocess(
             cleaned_narration_text, return_attention_mask=False
         ).input_ids
     preprocessed["pixel_values"] = item["video"]
+    if video_transform is not None:
+        preprocessed["pixel_values"] = video_transform(preprocessed["pixel_values"])
 
     return preprocessed
 
@@ -125,6 +131,9 @@ def train() -> None:
             processor,
             decoder_only_lm=model.config.use_decoder_only_language_model,
             instruct_tuned=model_args.instruct_tuned,
+            video_transform=Compose(
+                [UniformTemporalSubsample(model_args.num_subsample_frames)]
+            ),
         ),
     )
     val_data = Ego4dFHOMainFrameDataset(
@@ -134,6 +143,9 @@ def train() -> None:
             processor,
             decoder_only_lm=model.config.use_decoder_only_language_model,
             instruct_tuned=model_args.instruct_tuned,
+            video_transform=Compose(
+                [UniformTemporalSubsample(model_args.num_subsample_frames)]
+            ),
         ),
     )
 
