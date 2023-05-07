@@ -21,6 +21,7 @@ parser.add_argument("train_extracted_frames_path")
 parser.add_argument("val_extracted_frames_path")
 parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument("--verbose", action="store_true", default=False)
+parser.add_argument("--verify-only", action="store_true", default=False)
 args = parser.parse_args()
 
 
@@ -157,10 +158,11 @@ def verify_frame_dirs(args: argparse.Namespace, split: str) -> None:
             )
 
 
-move_frame_dirs(args, "val", "train")
-move_frame_dirs(args, "train", "val")
-if args.dry_run:
-    logging.info("Dry run. Skipping verification.")
-else:
+if not args.verify_only:
+    move_frame_dirs(args, "val", "train")
+    move_frame_dirs(args, "train", "val")
+if args.verify_only or not args.dry_run:
     verify_frame_dirs(args, "train")
     verify_frame_dirs(args, "val")
+else:
+    logging.info("Dry run. Skipping verification.")
