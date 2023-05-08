@@ -49,12 +49,15 @@ def preprocess(
         preprocessed["labels"][: len(prompt_tokens)] = -100
     else:
         # eos is automatically appended by the tokenizer
-        preprocessed = processor.tokenizer(
-            PROMPT, return_attention_mask=False, return_tensors="pt"
+        # we don't use return_tensors='pt' here b/c it automatically batchifies things
+        # which we don't want
+        preprocessed = processor.tokenizer(PROMPT, return_attention_mask=False)
+        preprocessed["input_ids"] = torch.tensor(preprocessed["input_ids"])
+        preprocessed["labels"] = torch.tensor(
+            processor.tokenizer(
+                cleaned_narration_text, return_attention_mask=False
+            ).input_ids
         )
-        preprocessed["labels"] = processor.tokenizer(
-            cleaned_narration_text, return_attention_mask=False
-        ).input_ids
     preprocessed["pixel_values"] = item["video"]
     if video_transform is not None:
         preprocessed["pixel_values"] = video_transform(preprocessed["pixel_values"])
