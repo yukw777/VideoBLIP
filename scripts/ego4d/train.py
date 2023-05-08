@@ -15,24 +15,20 @@ from video_blip2.data.utils import clean_narration_text
 from video_blip2.model import VideoBlip2ForConditionalGeneration
 
 PROMPT = "Question: What is the camera wearer doing? Answer:"
-INSTR_PROMPT = "What is the camera wearer doing?"
 
 
 def preprocess(
     processor: Blip2Processor,
     item: dict[str, Any],
     decoder_only_lm: bool = True,
-    instruct_tuned: bool = True,
     video_transform: Callable[[torch.Tensor], torch.Tensor] | None = None,
 ) -> dict[str, torch.Tensor]:
-    prompt = INSTR_PROMPT if instruct_tuned else PROMPT
-
     # tokenize text inputs
     cleaned_narration_text = clean_narration_text(item["narration_text"])
     if decoder_only_lm:
         # tokenize prompt first
         prompt_tokens = processor.tokenizer(
-            prompt, return_attention_mask=False
+            PROMPT, return_attention_mask=False
         ).input_ids
 
         # tokenize the narration and append eos
@@ -54,7 +50,7 @@ def preprocess(
     else:
         # eos is automatically appended by the tokenizer
         preprocessed = processor.tokenizer(
-            prompt, return_attention_mask=False, return_tensors="pt"
+            PROMPT, return_attention_mask=False, return_tensors="pt"
         )
         preprocessed["labels"] = processor.tokenizer(
             cleaned_narration_text, return_attention_mask=False
@@ -71,7 +67,6 @@ def preprocess(
 @dataclass
 class ModelArguments:
     model_name_or_path: str
-    instruct_tuned: bool
     num_subsample_frames: int
 
 
@@ -130,7 +125,6 @@ def train() -> None:
             preprocess,
             processor,
             decoder_only_lm=model.config.use_decoder_only_language_model,
-            instruct_tuned=model_args.instruct_tuned,
             video_transform=Compose(
                 [UniformTemporalSubsample(model_args.num_subsample_frames)]
             ),
@@ -142,7 +136,6 @@ def train() -> None:
             preprocess,
             processor,
             decoder_only_lm=model.config.use_decoder_only_language_model,
-            instruct_tuned=model_args.instruct_tuned,
             video_transform=Compose(
                 [UniformTemporalSubsample(model_args.num_subsample_frames)]
             ),
