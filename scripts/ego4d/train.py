@@ -11,7 +11,11 @@ from transformers import Blip2Processor
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 
 from video_blip2.data.ego4d import Ego4dFHOMainFrameDataset
-from video_blip2.data.utils import clean_narration_text
+from video_blip2.data.utils import (
+    DataCollatorForVideoSeq2Seq,
+    clean_narration_text,
+    generate_input_ids_and_labels,
+)
 from video_blip2.model import VideoBlip2ForConditionalGeneration
 
 PROMPT = "Question: What is the camera wearer doing? Answer:"
@@ -25,39 +29,9 @@ def preprocess(
 ) -> dict[str, torch.Tensor]:
     # tokenize text inputs
     cleaned_narration_text = clean_narration_text(item["narration_text"])
-    if decoder_only_lm:
-        # tokenize prompt first
-        prompt_tokens = processor.tokenizer(
-            PROMPT, return_attention_mask=False
-        ).input_ids
-
-        # tokenize the narration and append eos
-        preprocessed = processor.tokenizer(
-            " " + cleaned_narration_text,
-            return_attention_mask=False,
-            add_special_tokens=False,
-        )
-        preprocessed["input_ids"].append(processor.tokenizer.eos_token_id)
-
-        # join tokenized prompt and narration text
-        preprocessed["input_ids"] = prompt_tokens + preprocessed["input_ids"]
-        preprocessed["input_ids"] = torch.tensor(preprocessed.input_ids)
-
-        # for decoder only LMs, labels are same as input_ids, but we mask
-        # tokens for the prompt
-        preprocessed["labels"] = preprocessed["input_ids"].clone()
-        preprocessed["labels"][: len(prompt_tokens)] = -100
-    else:
-        # eos is automatically appended by the tokenizer
-        # we don't use return_tensors='pt' here b/c it automatically batchifies things
-        # which we don't want
-        preprocessed = processor.tokenizer(PROMPT, return_attention_mask=False)
-        preprocessed["input_ids"] = torch.tensor(preprocessed["input_ids"])
-        preprocessed["labels"] = torch.tensor(
-            processor.tokenizer(
-                cleaned_narration_text, return_attention_mask=False
-            ).input_ids
-        )
+    preprocessed = generate_input_ids_and_labels(
+        processor.tokenizer, PROMPT, cleaned_narration_text, decoder_only_lm
+    )
     preprocessed["pixel_values"] = item["video"]
     if video_transform is not None:
         preprocessed["pixel_values"] = video_transform(preprocessed["pixel_values"])
@@ -82,16 +56,6 @@ class DataArguments:
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
     optim: str = field(default="adamw_torch")
-
-
-class DataCollatorForVideoSeq2Seq(transformers.DataCollatorForSeq2Seq):
-    def __call__(self, features, return_tensors=None):
-        pixel_values = torch.stack(
-            [feature.pop("pixel_values") for feature in features]
-        )
-        collated = super().__call__(features, return_tensors=return_tensors)
-        collated["pixel_values"] = pixel_values
-        return collated
 
 
 def train() -> None:
