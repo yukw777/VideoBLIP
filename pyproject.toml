@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "video-blip2"
+name = "video-blip"
 version = "0.1.0"
-description = "Video-BLIP2: BLIP2 for Videos"
+description = "VideoBLIP: BLIP for Videos"
 authors = ["Peter Yu <2057325+yukw777@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "video_blip2"}]
+packages = [{include = "video_blip"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

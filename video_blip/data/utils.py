@@ -3,7 +3,7 @@ import re
 import torch
 from transformers import BatchEncoding, DataCollatorForSeq2Seq, PreTrainedTokenizer
 
-from video_blip2.data.ego4d import Ego4dFHOMainDataset
+from video_blip.data.ego4d import Ego4dFHOMainDataset
 
 
 class DataCollatorForVideoSeq2Seq(DataCollatorForSeq2Seq):

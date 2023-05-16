@@ -3,14 +3,14 @@ from unittest.mock import patch
 
 from pytorchvideo.data.clip_sampling import ClipInfo
 
-from video_blip2.data.ego4d import NarratedActionClipSampler
+from video_blip.data.ego4d import NarratedActionClipSampler
 
 
 def reverse(x: list[int]) -> None:
     x.reverse()
 
 
-@patch("video_blip2.data.ego4d.random.shuffle", new=reverse)
+@patch("video_blip.data.ego4d.random.shuffle", new=reverse)
 def test_narrated_action_clip_sampler_random() -> None:
     clip_sampler = NarratedActionClipSampler()
     annotation_1 = {

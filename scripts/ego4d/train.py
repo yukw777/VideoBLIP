@@ -10,13 +10,13 @@ from torchvision.transforms import Compose
 from transformers import Blip2Processor
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 
-from video_blip2.data.ego4d import Ego4dFHOMainFrameDataset
-from video_blip2.data.utils import (
+from video_blip.data.ego4d import Ego4dFHOMainFrameDataset
+from video_blip.data.utils import (
     DataCollatorForVideoSeq2Seq,
     clean_narration_text,
     generate_input_ids_and_labels,
 )
-from video_blip2.model import VideoBlip2ForConditionalGeneration
+from video_blip.model import VideoBlip2ForConditionalGeneration
 
 PROMPT = "Question: What is the camera wearer doing? Answer:"
 

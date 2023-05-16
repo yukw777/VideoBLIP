@@ -4,7 +4,7 @@ import pytest
 import torch
 from transformers import BatchEncoding
 
-from video_blip2.data.utils import clean_narration_text, generate_input_ids_and_labels
+from video_blip.data.utils import clean_narration_text, generate_input_ids_and_labels
 
 
 @pytest.mark.parametrize(
