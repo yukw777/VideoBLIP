@@ -133,13 +133,13 @@ def construct_demo(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("model_name_or_path")
+    parser.add_argument("--model", default="kpyu/video-blip-flan-t5-xl-ego4d")
     parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
 
-    processor = Blip2Processor.from_pretrained(args.model_name_or_path)
-    model = VideoBlipForConditionalGeneration.from_pretrained(
-        args.model_name_or_path
-    ).to(args.device)
+    processor = Blip2Processor.from_pretrained(args.model)
+    model = VideoBlipForConditionalGeneration.from_pretrained(args.model).to(
+        args.device
+    )
     demo = construct_demo(model, processor, VideoPathHandler())
     demo.launch()
