@@ -8,6 +8,11 @@
 - Have a chat about a video.
 - Optimized for egocentric views.
 
+## Upcoming Features
+
+- Bigger models.
+- In-context learning.
+
 ## Setup
 
 ```bash
