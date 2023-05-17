@@ -17,6 +17,7 @@ repos:
       - id: check-toml
       - id: check-case-conflict
       - id: check-added-large-files
+        args: ["--maxkb=10000"]
       - id: pretty-format-json
         args: ["--autofix"]
       - id: mixed-line-ending

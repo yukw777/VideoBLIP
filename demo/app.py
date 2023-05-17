@@ -1,12 +1,14 @@
-import torch
-import gradio as gr
 import argparse
 import string
-
-from transformers import Blip2Processor
 from functools import partial
-from video_blip.model import VideoBlip2ForConditionalGeneration
+from pathlib import Path
+
+import gradio as gr
+import torch
 from pytorchvideo.data.video import VideoPathHandler
+from transformers import Blip2Processor
+
+from video_blip.model import VideoBlip2ForConditionalGeneration
 
 
 @torch.no_grad()
@@ -105,6 +107,29 @@ def construct_demo(
                 with gr.Row():
                     clear_button = gr.Button(value="Clear")
                     clear_button.click(lambda: ("", []), outputs=[chat_input, chatbot])
+        with gr.Row():
+            curr_path = Path(__file__).parent
+            gr.Examples(
+                examples=[
+                    [
+                        str(curr_path / "examples/bike-fixing-0.mp4"),
+                        "What is the camera wearer doing?",
+                    ],
+                    [
+                        str(curr_path / "examples/bike-fixing-1.mp4"),
+                        "Question: What is the camera wearer doing? Answer:",
+                    ],
+                    [
+                        str(curr_path / "examples/motorcycle-riding-0.mp4"),
+                        "What is the camera wearer doing?",
+                    ],
+                    [
+                        str(curr_path / "examples/motorcycle-riding-1.mp4"),
+                        "Question: What is the camera wearer doing? Answer:",
+                    ],
+                ],
+                inputs=[video_input, chat_input],
+            )
 
     return demo
 
