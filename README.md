@@ -135,3 +135,7 @@ python scripts/ego4d/train.py \
     --save_total_limit 3 \
     --logging_steps 10
 ```
+
+## Citing VideoBLIP
+
+Please refer to [CITATION.cff](CITATION.cff), or click the "Cite this repository" button on GitHub.
