@@ -8,12 +8,12 @@ import torch
 from pytorchvideo.data.video import VideoPathHandler
 from transformers import Blip2Processor
 
-from video_blip.model import VideoBlip2ForConditionalGeneration
+from video_blip.model import VideoBlipForConditionalGeneration
 
 
 @torch.no_grad()
 def respond(
-    model: VideoBlip2ForConditionalGeneration,
+    model: VideoBlipForConditionalGeneration,
     processor: Blip2Processor,
     video_path_handler: VideoPathHandler,
     video_path: str,
@@ -60,7 +60,7 @@ def respond(
 
 
 def construct_demo(
-    model: VideoBlip2ForConditionalGeneration,
+    model: VideoBlipForConditionalGeneration,
     processor: Blip2Processor,
     video_path_handler: VideoPathHandler,
 ) -> gr.Blocks:
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     processor = Blip2Processor.from_pretrained(args.model_name_or_path)
-    model = VideoBlip2ForConditionalGeneration.from_pretrained(
+    model = VideoBlipForConditionalGeneration.from_pretrained(
         args.model_name_or_path
     ).to(args.device)
     demo = construct_demo(model, processor, VideoPathHandler())

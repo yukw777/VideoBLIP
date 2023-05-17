@@ -16,7 +16,7 @@ from video_blip.data.utils import (
     clean_narration_text,
     generate_input_ids_and_labels,
 )
-from video_blip.model import VideoBlip2ForConditionalGeneration
+from video_blip.model import VideoBlipForConditionalGeneration
 
 PROMPT = "Question: What is the camera wearer doing? Answer:"
 
@@ -73,7 +73,7 @@ def train() -> None:
     processor = transformers.Blip2Processor.from_pretrained(
         model_args.model_name_or_path
     )
-    model = VideoBlip2ForConditionalGeneration.from_pretrained(
+    model = VideoBlipForConditionalGeneration.from_pretrained(
         model_args.model_name_or_path,
         low_cpu_mem_usage=False if is_deepspeed_zero3_enabled() else True,
     )

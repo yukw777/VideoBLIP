@@ -11,7 +11,7 @@ from transformers import (
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
-class VideoBlip2VisionModel(Blip2VisionModel):
+class VideoBlipVisionModel(Blip2VisionModel):
     """A simple, augmented version of Blip2VisionModel to handle videos."""
 
     def forward(
@@ -92,14 +92,14 @@ class VideoBlip2VisionModel(Blip2VisionModel):
         return (last_hidden_state, pooler_output, hidden_states, attentions)
 
 
-class VideoBlip2ForConditionalGeneration(Blip2ForConditionalGeneration):
+class VideoBlipForConditionalGeneration(Blip2ForConditionalGeneration):
     def __init__(self, config: Blip2Config) -> None:
         # HACK: we call the grandparent super().__init__() to bypass
         # Blip2ForConditionalGeneration.__init__() so we can replace
         # self.vision_model
         super(Blip2ForConditionalGeneration, self).__init__(config)
 
-        self.vision_model = VideoBlip2VisionModel(config.vision_config)
+        self.vision_model = VideoBlipVisionModel(config.vision_config)
 
         self.query_tokens = nn.Parameter(
             torch.zeros(1, config.num_query_tokens, config.qformer_config.hidden_size)

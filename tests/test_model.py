@@ -2,7 +2,7 @@ import pytest
 import torch
 from transformers import Blip2VisionConfig
 
-from video_blip.model import VideoBlip2VisionModel
+from video_blip.model import VideoBlipVisionModel
 
 
 @pytest.mark.parametrize("output_hidden_states", [True, False])
@@ -37,7 +37,7 @@ def test_video_blip_vision_model_forward(
     output_attentions: bool,
     output_hidden_states: bool,
 ) -> None:
-    model = VideoBlip2VisionModel(config)
+    model = VideoBlipVisionModel(config)
     outputs = model(
         pixel_values=torch.rand(
             # channel is pretty much always 3
