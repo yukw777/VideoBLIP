@@ -41,6 +41,10 @@ matplotlib = "^3.7.1"
 [tool.poetry.group.demo.dependencies]
 gradio = "^3.30.0"
 
+
+[tool.poetry.group.hf.dependencies]
+huggingface-hub = "^0.14.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
