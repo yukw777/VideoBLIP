@@ -37,6 +37,10 @@ optional = true
 jupyter = "^1.0.0"
 matplotlib = "^3.7.1"
 
+
+[tool.poetry.group.demo.dependencies]
+gradio = "^3.30.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
