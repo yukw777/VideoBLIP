@@ -8,7 +8,7 @@ import torch
 from pytorchvideo.data.video import VideoPathHandler
 from transformers import Blip2Processor
 
-from video_blip.model import VideoBlipForConditionalGeneration
+from video_blip.model import VideoBlipForConditionalGeneration, process
 
 
 @torch.no_grad()
@@ -27,7 +27,7 @@ def respond(
     clip = video_path_handler.video_from_path(video_path).get_clip(0, 10)
 
     # sample a frame every 30 frames, i.e. 1 fps. We assume the video is 30 fps for now.
-    frames = clip["video"][:, ::30, ...]
+    frames = clip["video"][:, ::30, ...].unsqueeze(0)
 
     # construct chat context
     context = " ".join(user_msg + " " + bot_msg for user_msg, bot_msg in chat_history)
@@ -35,10 +35,7 @@ def respond(
     context = context.strip()
 
     # process the inputs
-    inputs = processor(
-        images=frames.permute(1, 0, 2, 3), text=context, return_tensors="pt"
-    ).to(model.device)
-    inputs["pixel_values"] = inputs["pixel_values"].permute(1, 0, 2, 3).unsqueeze(0)
+    inputs = process(processor, video=frames, text=context).to(model.device)
     generated_ids = model.generate(
         **inputs,
         num_beams=num_beams,

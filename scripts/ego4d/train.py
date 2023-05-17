@@ -7,7 +7,6 @@ import torch
 import transformers
 from pytorchvideo.transforms import UniformTemporalSubsample
 from torchvision.transforms import Compose
-from transformers import Blip2Processor
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 
 from video_blip.data.ego4d import Ego4dFHOMainFrameDataset
@@ -22,7 +21,7 @@ PROMPT = "Question: What is the camera wearer doing? Answer:"
 
 
 def preprocess(
-    processor: Blip2Processor,
+    processor: transformers.Blip2Processor,
     item: dict[str, Any],
     decoder_only_lm: bool = True,
     video_transform: Callable[[torch.Tensor], torch.Tensor] | None = None,

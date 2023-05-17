@@ -1,8 +1,10 @@
+from unittest.mock import Mock
+
 import pytest
 import torch
-from transformers import Blip2VisionConfig
+from transformers import BatchEncoding, Blip2VisionConfig
 
-from video_blip.model import VideoBlipVisionModel
+from video_blip.model import VideoBlipVisionModel, process
 
 
 @pytest.mark.parametrize("output_hidden_states", [True, False])
@@ -77,3 +79,32 @@ def test_video_blip_vision_model_forward(
             assert hidden.size() == (batch, time * num_tokens, config.hidden_size)
     else:
         assert hidden_states is None
+
+
+@pytest.mark.parametrize(
+    "batch,time,height,width,resize",
+    [(None, 8, 1280, 720, 244), (3, 8, 1280, 720, 244)],
+)
+def test_video_blip_processor(batch, time, height, width, resize):
+    processor = Mock(
+        side_effect=[
+            BatchEncoding(
+                data={
+                    "pixel_values": torch.empty(
+                        time if batch is None else batch * time, 3, resize, resize
+                    )
+                }
+            )
+        ]
+    )
+    assert (
+        process(
+            processor,
+            video=torch.empty(3, time, height, width)
+            if batch is None
+            else torch.empty(batch, 3, time, height, width),
+        ).pixel_values.size()
+        == (1, 3, time, resize, resize)
+        if batch is None
+        else (batch, 3, time, resize, resize)
+    )
