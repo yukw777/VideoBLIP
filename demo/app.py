@@ -67,6 +67,7 @@ def construct_demo(
         gr.Markdown(
             """**Limitations**
 - Due to computational limits, VideoBLIP only processes the first 10 seconds of the uploaded video.
+- Please upload only short videos (around 10 seconds) as we have limited computational resources.
 - If you use a non-instruction-tuned LLM backbone, it may not be able to perform multi-turn dialogues.
 - If you still want to chat with a non-instruction-tuned LLM backbone, try formatting your input as \"Question: {} Answer: \""""  # noqa: E501
         )
