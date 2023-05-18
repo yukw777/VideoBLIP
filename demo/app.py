@@ -86,25 +86,48 @@ def construct_demo(
                         minimum=0.1, maximum=1.0, value=0.7, label="Temperature"
                     )
             with gr.Column():
-                with gr.Row():
+                with gr.Blocks():
                     chatbot = gr.Chatbot()
-                with gr.Row():
-                    chat_input = gr.Textbox()
-                    chat_input.submit(
-                        partial(respond, model, processor, video_path_handler),
-                        inputs=[
-                            video_input,
-                            chat_input,
-                            chatbot,
-                            num_beams,
-                            max_new_tokens,
-                            temp,
-                        ],
-                        outputs=[chat_input, chatbot],
-                    )
-                with gr.Row():
-                    clear_button = gr.Button(value="Clear")
-                    clear_button.click(lambda: ("", []), outputs=[chat_input, chatbot])
+                    with gr.Row():
+                        respond_partial = partial(
+                            respond, model, processor, video_path_handler
+                        )
+                        with gr.Column(scale=0.85):
+                            chat_input = gr.Textbox(
+                                show_label=False,
+                                placeholder="Enter text and press enter or click send",
+                            ).style(container=False)
+                            chat_input.submit(
+                                respond_partial,
+                                inputs=[
+                                    video_input,
+                                    chat_input,
+                                    chatbot,
+                                    num_beams,
+                                    max_new_tokens,
+                                    temp,
+                                ],
+                                outputs=[chat_input, chatbot],
+                            )
+                        with gr.Column(scale=0.15, min_width=0):
+                            send_button = gr.Button(value="Send", variant="primary")
+                            send_button.click(
+                                respond_partial,
+                                inputs=[
+                                    video_input,
+                                    chat_input,
+                                    chatbot,
+                                    num_beams,
+                                    max_new_tokens,
+                                    temp,
+                                ],
+                                outputs=[chat_input, chatbot],
+                            )
+                    with gr.Row():
+                        clear_button = gr.Button(value="Clear")
+                        clear_button.click(
+                            lambda: ("", []), outputs=[chat_input, chatbot]
+                        )
         with gr.Row():
             curr_path = Path(__file__).parent
             gr.Examples(
