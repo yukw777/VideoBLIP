@@ -1,5 +1,7 @@
 # VideoBLIP: Supercharged [BLIP-2](https://arxiv.org/abs/2301.12597) that can handle videos.
 
+[![Demo](https://img.shields.io/badge/Website-Demo-ff69b4.svg)](https://48f6-141-212-106-177.ngrok-free.app/)
+
 ![Demo](figures/demo.png)
 
 ## Features
