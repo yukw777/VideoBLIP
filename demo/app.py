@@ -126,7 +126,8 @@ def construct_demo(
                     with gr.Row():
                         clear_button = gr.Button(value="Clear")
                         clear_button.click(
-                            lambda: ("", []), outputs=[chat_input, chatbot]
+                            lambda: (None, "", []),
+                            outputs=[video_input, chat_input, chatbot],
                         )
         with gr.Row():
             curr_path = Path(__file__).parent
