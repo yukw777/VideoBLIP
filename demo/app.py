@@ -79,7 +79,7 @@ def construct_demo(
                         minimum=0, maximum=10, value=4, step=1, label="Number of beams"
                     )
                     max_new_tokens = gr.Slider(
-                        minimum=20, maximum=256, value=128, label="Maximum new tokens"
+                        minimum=20, maximum=256, value=128, label="Max new tokens"
                     )
                     temp = gr.Slider(
                         minimum=0.1, maximum=1.0, value=0.7, label="Temperature"
