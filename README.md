@@ -1,3 +1,4 @@
+# **We have a new version of VideoBLIP: [EILEV](https://github.com/yukw777/EILEV). This repository will not be maintained anymore. Please check out EILEV instead!**
 # VideoBLIP: Supercharged [BLIP-2](https://arxiv.org/abs/2301.12597) that can handle videos.
 
 <!---
